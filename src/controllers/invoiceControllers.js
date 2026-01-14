@@ -2,28 +2,12 @@ const Invoice = require("../models/invoice");
 
 // CREATE
 async function addInvoice(req, res) {
-  const {
-    clientName,
-    amount,
-    service,
-    paymentMethod,
-    invoiceDate,
-    isPaid = false,
-  } = req.body;
-
   try {
-    const invoice = await Invoice.create({
-      clientName,
-      amount,
-      service,
-      paymentMethod,
-      invoiceDate,
-      isPaid,
-    });
-    res.status(201).send("Invoice added successfully");
+    const invoice = await Invoice.create(req.body);
+    res.status(201).json(invoice);
   } catch (error) {
-    console.error("Failed to add invoice: ", error);
-    res.status(500).send("Failed to add invoice");
+    console.error("Failed to add invoice:", error);
+    res.status(500).json({ message: "Failed to add invoice" });
   }
 }
 
@@ -31,73 +15,58 @@ async function addInvoice(req, res) {
 async function getAllInvoices(req, res) {
   try {
     const invoices = await Invoice.find();
-    res.status(200).send(invoices);
+    res.status(200).json(invoices);
   } catch (error) {
-    console.error("Failed to fetch invoices: ", error);
-    res.status(404).send("Failed to fetch invoices");
+    console.error("Failed to fetch invoices:", error);
+    res.status(500).json({ message: "Failed to fetch invoices" });
   }
 }
 
 // RETRIEVE ONE
 async function getInvoiceById(req, res) {
-  const invoiceId = req.params.id;
   try {
-    const invoice = await Invoice.findById(invoiceId);
+    const invoice = await Invoice.findById(req.params.id);
     if (!invoice) {
-      return res
-        .status(404)
-        .send("The invoice with the given ID was not found.");
+      return res.status(404).json({ message: "Invoice not found" });
     }
-    res.status(200).send(invoice);
+    res.status(200).json(invoice);
   } catch (error) {
-    console.error("Failed to fetch invoice: ", error);
-    res.status(404).send("Failed to fetch invoice");
+    console.error("Failed to fetch invoice:", error);
+    res.status(400).json({ message: "Invalid invoice ID" });
   }
 }
 
 // UPDATE
 async function updateInvoice(req, res) {
-  const invoiceId = req.params.id;
-  const { clientName, amount, service, paymentMethod, invoiceDate, isPaid } =
-    req.body;
-
   try {
     const updatedInvoice = await Invoice.findByIdAndUpdate(
-      invoiceId,
-      {
-        clientName,
-        amount,
-        service,
-        paymentMethod,
-        invoiceDate,
-        isPaid,
-      },
-      { new: true }
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
     );
+
     if (!updatedInvoice) {
-      return res
-        .status(404)
-        .send("The invoice with the given ID was not found.");
+      return res.status(404).json({ message: "Invoice not found" });
     }
-    res.status(200).send("Invoice updated successfully");
+
+    res.status(200).json(updatedInvoice);
   } catch (error) {
-    console.error("Failed to update invoice: ", error);
-    res.status(500).send("Failed to update invoice");
+    console.error("Failed to update invoice:", error);
+    res.status(400).json({ message: "Failed to update invoice" });
   }
 }
 
 // DELETE
 async function deleteInvoice(req, res) {
-  const invoiceId = req.params.id;
   try {
-    const deletedInvoice = await Invoice.findByIdAndDelete(invoiceId);
+    const deletedInvoice = await Invoice.findByIdAndDelete(req.params.id);
     if (!deletedInvoice) {
-      return res.status(404).send("Invoice not found");
+      return res.status(404).json({ message: "Invoice not found" });
     }
-    res.status(200).send("Invoice deleted successfully");
+    res.status(200).json({ message: "Invoice deleted successfully" });
   } catch (error) {
-    console.error("Failed to delete invoice: ", error);
-    res.status(404).send("Invoice not found");
+    console.error("Failed to delete invoice:", error);
+    res.status(400).json({ message: "Invalid invoice ID" });
   }
 }
 
